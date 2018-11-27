@@ -144,6 +144,15 @@ const ecma_builtin_property_descriptor_t PROPERTY_DESCRIPTOR_LIST_NAME[] =
     prop_attributes, \
     magic_string_id \
   },
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+#define SYMBOL_VALUE(name) \
+  { \
+    name, \
+    ECMA_BUILTIN_PROPERTY_SYMBOL, \
+    ECMA_PROPERTY_FIXED, \
+    name \
+  },
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 #define ACCESSOR_READ_WRITE(name, c_getter_name, c_setter_name, prop_attributes) \
   { \
     name, \

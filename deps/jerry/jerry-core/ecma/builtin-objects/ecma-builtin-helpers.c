@@ -187,7 +187,7 @@ ecma_builtin_helper_get_to_locale_string_at_index (ecma_object_t *obj_p, /**< th
  */
 ecma_value_t
 ecma_builtin_helper_object_get_properties (ecma_object_t *obj_p, /**< object */
-                                           bool only_enumerable_properties) /**< list enumerable properties? */
+                                           uint32_t opts) /**< any combination of ecma_list_properties_options_t */
 {
   JERRY_ASSERT (obj_p != NULL);
 
@@ -199,13 +199,25 @@ ecma_builtin_helper_object_get_properties (ecma_object_t *obj_p, /**< object */
 
   ecma_collection_header_t *props_p;
   props_p = ecma_op_object_get_property_names (obj_p,
-                                               only_enumerable_properties ? ECMA_LIST_ENUMERABLE : ECMA_LIST_NO_OPTS);
+                                               opts);
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  const bool list_symbol_props = (const bool) (opts & ECMA_LIST_SYMBOLS);
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
   ecma_value_t *ecma_value_p = ecma_collection_iterator_init (props_p);
 
   while (ecma_value_p != NULL)
   {
     ecma_string_t *index_string_p = ecma_new_ecma_string_from_uint32 (index);
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    if (list_symbol_props)
+    {
+      JERRY_ASSERT (ecma_is_value_string (*ecma_value_p));
+      *ecma_value_p = ECMA_CONVERT_STRING_TO_SYMBOL (*ecma_value_p);
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
     ecma_value_t completion = ecma_builtin_helper_def_prop (new_array_p,
                                                             index_string_p,

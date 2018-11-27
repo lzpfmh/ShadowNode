@@ -23,6 +23,11 @@
 #include "lit-char-helpers.h"
 #include "lit-magic-strings.h"
 
+/**
+ * Bitmask for a new symbol hash property
+ */
+#define ECMA_SYMBOL_HASH_MASK ((1 << 16) - 1)
+
 /** \addtogroup ecma ECMA
  * @{
  *
@@ -182,6 +187,26 @@ ecma_string_get_chars_fast (const ecma_string_t *string_p, /**< ecma-string */
     }
   }
 } /* ecma_string_get_chars_fast */
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+/**
+ * Allocate new ecma-string and fill it with reference to the symbol descriptor
+ *
+ * @return pointer to ecma-string descriptor
+ */
+ecma_string_t *
+ecma_new_symbol_from_descriptor_string (ecma_value_t string_desc) /**< ecma-string */
+{
+  JERRY_ASSERT (!ecma_is_value_symbol (string_desc));
+
+  ecma_string_t *symbol_p = ecma_alloc_string ();
+  symbol_p->refs_and_container = ECMA_STRING_REF_ONE | ECMA_STRING_CONTAINER_HEAP_UTF8_SYMBOL;
+  symbol_p->u.symbol_descriptor = string_desc;
+  symbol_p->hash = string_desc & ECMA_SYMBOL_HASH_MASK;
+
+  return symbol_p;
+} /* ecma_new_symbol_from_descriptor_string */
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
 /**
  * Allocate new ecma-string and fill it with characters from the utf8 string
@@ -949,6 +974,13 @@ ecma_deref_ecma_string (ecma_string_t *string_p) /**< ecma-string */
       ecma_free_value (string_p->u.lit_number);
       break;
     }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    case ECMA_STRING_CONTAINER_HEAP_UTF8_SYMBOL:
+    {
+      ecma_free_value (string_p->u.symbol_descriptor);
+      break;
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
     default:
     {
       JERRY_UNREACHABLE ();
@@ -1780,6 +1812,13 @@ ecma_compare_ecma_strings (const ecma_string_t *string1_p, /**< ecma-string */
   {
     return false;
   }
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  if (string1_container == ECMA_STRING_CONTAINER_HEAP_UTF8_SYMBOL)
+  {
+    return false;
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
   if (string1_container >= ECMA_STRING_CONTAINER_UINT32_IN_DESC)
   {

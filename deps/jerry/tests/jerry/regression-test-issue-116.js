@@ -19,5 +19,17 @@ try
 }
 catch (e)
 {
-  assert (e instanceof ReferenceError);
+  var error_type = ReferenceError;
+
+  try
+  {
+    /* Check whether the Symbol builtin is available */
+    Symbol;
+    error_type = TypeError;
+  }
+  catch (e)
+  {
+  }
+
+  assert (e instanceof error_type);
 }

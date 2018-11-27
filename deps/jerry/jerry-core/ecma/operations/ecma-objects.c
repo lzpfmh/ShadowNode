@@ -27,6 +27,10 @@
 #include "ecma-objects-general.h"
 #include "ecma-objects.h"
 
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+#include "ecma-symbol-object.h"
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
 #ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 #include "ecma-typedarray-object.h"
 #endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
@@ -944,6 +948,14 @@ ecma_op_object_put (ecma_object_t *object_p, /**< the object */
         && ecma_get_object_extensible (object_p))
     {
       const ecma_object_type_t obj_type = ecma_get_object_type (object_p);
+      uint8_t prop_opts = ECMA_PROPERTY_CONFIGURABLE_ENUMERABLE_WRITABLE;
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+      if (ecma_prop_name_is_symbol (property_name_p))
+      {
+        prop_opts &= (uint8_t) ~ECMA_PROPERTY_FLAG_ENUMERABLE;
+      }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
       if (obj_type == ECMA_OBJECT_TYPE_PSEUDO_ARRAY)
       {
@@ -983,7 +995,7 @@ ecma_op_object_put (ecma_object_t *object_p, /**< the object */
       ecma_property_value_t *new_prop_value_p;
       new_prop_value_p = ecma_create_named_data_property (object_p,
                                                           property_name_p,
-                                                          ECMA_PROPERTY_CONFIGURABLE_ENUMERABLE_WRITABLE,
+                                                          prop_opts,
                                                           NULL);
 
       JERRY_ASSERT (ecma_is_value_undefined (new_prop_value_p->value));
@@ -1359,6 +1371,9 @@ ecma_op_object_get_property_names (ecma_object_t *obj_p, /**< object */
   const bool is_enumerable_only = (const bool) (opts & ECMA_LIST_ENUMERABLE);
   const bool is_array_indices_only = (const bool) (opts & ECMA_LIST_ARRAY_INDICES);
   const bool is_with_prototype_chain = (const bool) (opts & ECMA_LIST_PROTOTYPE);
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  const bool is_symbols_only = (const bool) (opts & ECMA_LIST_SYMBOLS);
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
   const size_t bitmap_row_size = sizeof (uint32_t) * JERRY_BITSINBYTE;
   uint32_t names_hashes_bitmap[ECMA_OBJECT_HASH_BITMAP_SIZE / bitmap_row_size];
@@ -1375,85 +1390,90 @@ ecma_op_object_get_property_names (ecma_object_t *obj_p, /**< object */
 
     ecma_collection_header_t *prop_names_p = ecma_new_values_collection ();
 
-    if (obj_is_builtin)
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    if (!is_symbols_only)
     {
-      ecma_builtin_list_lazy_property_names (obj_p,
-                                             is_enumerable_only,
-                                             prop_names_p,
-                                             skipped_non_enumerable_p);
-    }
-    else
-    {
-      switch (type)
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
+      if (obj_is_builtin)
       {
-        case ECMA_OBJECT_TYPE_GENERAL:
+        ecma_builtin_list_lazy_property_names (obj_p,
+                                               is_enumerable_only,
+                                               prop_names_p,
+                                               skipped_non_enumerable_p);
+      }
+      else
+      {
+        switch (type)
         {
-          break;
-        }
-        case ECMA_OBJECT_TYPE_PSEUDO_ARRAY:
-        {
-#ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
-          if (ecma_is_typedarray (ecma_make_object_value (obj_p)))
+          case ECMA_OBJECT_TYPE_PSEUDO_ARRAY:
           {
-            ecma_op_typedarray_list_lazy_property_names (obj_p, prop_names_p);
+  #ifndef CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
+            if (ecma_is_typedarray (ecma_make_object_value (obj_p)))
+            {
+              ecma_op_typedarray_list_lazy_property_names (obj_p, prop_names_p);
+            }
+  #endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
+            break;
           }
-#endif /* !CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN */
-          break;
-        }
-        case ECMA_OBJECT_TYPE_FUNCTION:
-#ifndef CONFIG_DISABLE_ES2015_ARROW_FUNCTION
-        case ECMA_OBJECT_TYPE_ARROW_FUNCTION:
-#endif /* !CONFIG_DISABLE_ES2015_ARROW_FUNCTION */
-        {
-          ecma_op_function_list_lazy_property_names (obj_p,
-                                                     is_enumerable_only,
-                                                     prop_names_p,
-                                                     skipped_non_enumerable_p);
-          break;
-        }
-        case ECMA_OBJECT_TYPE_EXTERNAL_FUNCTION:
-        {
-          ecma_op_external_function_list_lazy_property_names (is_enumerable_only,
-                                                              prop_names_p,
-                                                              skipped_non_enumerable_p);
-          break;
-        }
-        case ECMA_OBJECT_TYPE_BOUND_FUNCTION:
-        {
-          ecma_op_bound_function_list_lazy_property_names (is_enumerable_only,
-                                                           prop_names_p,
-                                                           skipped_non_enumerable_p);
-          break;
-        }
-        case ECMA_OBJECT_TYPE_CLASS:
-        {
-          ecma_extended_object_t *ext_object_p = (ecma_extended_object_t *) obj_p;
-
-          if (ext_object_p->u.class_prop.class_id == LIT_MAGIC_STRING_STRING_UL)
+          case ECMA_OBJECT_TYPE_FUNCTION:
+  #ifndef CONFIG_DISABLE_ES2015_ARROW_FUNCTION
+          case ECMA_OBJECT_TYPE_ARROW_FUNCTION:
+  #endif /* !CONFIG_DISABLE_ES2015_ARROW_FUNCTION */
           {
-            ecma_op_string_list_lazy_property_names (obj_p,
-                                                     is_enumerable_only,
-                                                     prop_names_p,
-                                                     skipped_non_enumerable_p);
+            ecma_op_function_list_lazy_property_names (obj_p,
+                                                       is_enumerable_only,
+                                                       prop_names_p,
+                                                       skipped_non_enumerable_p);
+            break;
           }
+          case ECMA_OBJECT_TYPE_EXTERNAL_FUNCTION:
+          {
+            ecma_op_external_function_list_lazy_property_names (is_enumerable_only,
+                                                                prop_names_p,
+                                                                skipped_non_enumerable_p);
+            break;
+          }
+          case ECMA_OBJECT_TYPE_BOUND_FUNCTION:
+          {
+            ecma_op_bound_function_list_lazy_property_names (is_enumerable_only,
+                                                             prop_names_p,
+                                                             skipped_non_enumerable_p);
+            break;
+          }
+          case ECMA_OBJECT_TYPE_CLASS:
+          {
+            ecma_extended_object_t *ext_object_p = (ecma_extended_object_t *) obj_p;
 
-          break;
-        }
-        case ECMA_OBJECT_TYPE_ARRAY:
-        {
-          ecma_op_array_list_lazy_property_names (obj_p,
-                                                  is_enumerable_only,
-                                                  prop_names_p,
-                                                  skipped_non_enumerable_p);
-          break;
-        }
-        default:
-        {
-          JERRY_UNREACHABLE ();
-          break;
+            if (ext_object_p->u.class_prop.class_id == LIT_MAGIC_STRING_STRING_UL)
+            {
+              ecma_op_string_list_lazy_property_names (obj_p,
+                                                       is_enumerable_only,
+                                                       prop_names_p,
+                                                       skipped_non_enumerable_p);
+            }
+
+            break;
+          }
+          case ECMA_OBJECT_TYPE_ARRAY:
+          {
+            ecma_op_array_list_lazy_property_names (obj_p,
+                                                    is_enumerable_only,
+                                                    prop_names_p,
+                                                    skipped_non_enumerable_p);
+            break;
+          }
+          default:
+          {
+            JERRY_ASSERT (type == ECMA_OBJECT_TYPE_GENERAL);
+
+            break;
+          }
         }
       }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
     }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
     ecma_value_t *ecma_value_p = ecma_collection_iterator_init (prop_names_p);
 
@@ -1508,6 +1528,14 @@ ecma_op_object_get_property_names (ecma_object_t *obj_p, /**< object */
 
           if (!(is_enumerable_only && !ecma_is_property_enumerable (*property_p)))
           {
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+            if (is_symbols_only && !ecma_prop_name_is_symbol (name_p))
+            {
+              ecma_deref_ecma_string (name_p);
+              continue;
+            }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
             uint8_t hash = (uint8_t) ecma_string_hash (name_p);
             uint32_t bitmap_row = (uint32_t) (hash / bitmap_row_size);
             uint32_t bitmap_column = (uint32_t) (hash % bitmap_row_size);

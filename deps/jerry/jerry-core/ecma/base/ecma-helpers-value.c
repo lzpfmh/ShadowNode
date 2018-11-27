@@ -17,6 +17,9 @@
 #include "ecma-gc.h"
 #include "ecma-globals.h"
 #include "ecma-helpers.h"
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+#include "ecma-symbol-object.h"
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 #include "jrt.h"
 #include "jrt-bit-fields.h"
 #include "vm-defines.h"
@@ -311,6 +314,20 @@ ecma_is_value_string (ecma_value_t value) /**< ecma value */
   return ((value & (ECMA_VALUE_TYPE_MASK - 0x4)) == ECMA_TYPE_STRING);
 } /* ecma_is_value_string */
 
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+/**
+ * Check if the value is symbol.
+ *
+ * @return true - if the value contains symbol value,
+ *         false - otherwise
+ */
+inline bool __attr_const___ __attr_always_inline___
+ecma_is_value_symbol (ecma_value_t value) /**< ecma value */
+{
+  return (ecma_get_value_type_field (value) == ECMA_TYPE_SYMBOL);
+} /* ecma_is_value_symbol */
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
 /**
  * Check if the value is direct_ecma-string.
  *
@@ -371,6 +388,7 @@ ecma_check_value_type_is_spec_defined (ecma_value_t value) /**< ecma value */
                 || ecma_is_value_boolean (value)
                 || ecma_is_value_number (value)
                 || ecma_is_value_string (value)
+                || ECMA_ASSERT_VALUE_IS_SYMBOl (value)
                 || ecma_is_value_object (value));
 } /* ecma_check_value_type_is_spec_defined */
 
@@ -526,6 +544,21 @@ ecma_make_string_value (const ecma_string_t *ecma_string_p) /**< string to refer
   return ecma_pointer_to_ecma_value (ecma_string_p) | ECMA_TYPE_STRING;
 } /* ecma_make_string_value */
 
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+/**
+ * Symbol value constructor
+ *
+ * @return ecma-value representation of the string argument
+ */
+inline ecma_value_t __attr_pure___ __attr_always_inline___
+ecma_make_symbol_value (const ecma_string_t *ecma_symbol_p) /**< symbol to reference in value */
+{
+  JERRY_ASSERT (ecma_symbol_p != NULL);
+
+  return ecma_pointer_to_ecma_value (ecma_symbol_p) | ECMA_TYPE_SYMBOL;
+} /* ecma_make_symbol_value */
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
 /**
  * String value constructor
  */
@@ -633,6 +666,21 @@ ecma_get_string_from_value (ecma_value_t value) /**< ecma value */
   return (ecma_string_t *) ecma_get_pointer_from_ecma_value (value);
 } /* ecma_get_string_from_value */
 
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+/**
+ * Get pointer to ecma-string from ecma value
+ *
+ * @return the string pointer
+ */
+inline ecma_string_t *__attr_pure___ __attr_always_inline___
+ecma_get_symbol_from_value (ecma_value_t value) /**< ecma value */
+{
+  JERRY_ASSERT (ecma_is_value_symbol (value));
+
+  return (ecma_string_t *) ecma_get_pointer_from_ecma_value (value);
+} /* ecma_get_symbol_from_value */
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
 /**
  * Get pointer to ecma-object from ecma value
  *
@@ -715,6 +763,13 @@ ecma_copy_value (ecma_value_t value)  /**< value description */
       ecma_ref_ecma_string (ecma_get_string_from_value (value));
       return value;
     }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    case ECMA_TYPE_SYMBOL:
+    {
+      ecma_ref_ecma_string (ecma_get_symbol_from_value (value));
+      return value;
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
     case ECMA_TYPE_OBJECT:
     {
       ecma_ref_object (ecma_get_object_from_value (value));
@@ -910,7 +965,13 @@ ecma_free_value (ecma_value_t value) /**< value description */
       ecma_deref_ecma_string (string_p);
       break;
     }
-
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    case ECMA_TYPE_SYMBOL:
+    {
+      ecma_deref_ecma_string (ecma_get_symbol_from_value (value));
+      break;
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
     case ECMA_TYPE_OBJECT:
     {
       ecma_deref_object (ecma_get_object_from_value (value));
@@ -992,6 +1053,12 @@ ecma_get_typeof_lit_id (ecma_value_t value) /**< input ecma value */
   {
     ret_value = LIT_MAGIC_STRING_STRING;
   }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  else if (ecma_is_value_symbol (value))
+  {
+    ret_value = LIT_MAGIC_STRING_SYMBOL;
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
   else
   {
     JERRY_ASSERT (ecma_is_value_object (value));

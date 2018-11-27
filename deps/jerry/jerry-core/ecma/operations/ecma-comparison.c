@@ -125,6 +125,16 @@ ecma_op_abstract_equality_compare (ecma_value_t x, /**< first operand */
     y = tmp;
   }
 
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  if (ecma_is_value_symbol (x))
+  {
+    /* Swap values. */
+    ecma_value_t tmp = x;
+    x = y;
+    y = tmp;
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
   if (ecma_is_value_boolean (y))
   {
     if (ecma_is_value_boolean (x))
@@ -141,6 +151,9 @@ ecma_op_abstract_equality_compare (ecma_value_t x, /**< first operand */
   if (ecma_is_value_object (x))
   {
     if (ecma_is_value_string (y)
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+        || ecma_is_value_symbol (y)
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
         || ecma_is_value_number (y))
     {
       /* 9. */
@@ -219,8 +232,8 @@ ecma_op_strict_equality_compare (ecma_value_t x, /**< first operand */
     /* The +0 === -0 case handled below. */
   }
 
-  JERRY_ASSERT (ecma_is_value_number (x) || ecma_is_value_string (x));
-  JERRY_ASSERT (ecma_is_value_number (y) || ecma_is_value_string (y));
+  JERRY_ASSERT (ecma_is_value_number (x) || ecma_is_value_string (x) || ECMA_ASSERT_VALUE_IS_SYMBOl (x));
+  JERRY_ASSERT (ecma_is_value_number (y) || ecma_is_value_string (y) || ECMA_ASSERT_VALUE_IS_SYMBOl (y));
 
   if (ecma_is_value_string (x))
   {
@@ -234,6 +247,14 @@ ecma_op_strict_equality_compare (ecma_value_t x, /**< first operand */
 
     return ecma_compare_ecma_strings (x_str_p, y_str_p);
   }
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  if (ecma_is_value_symbol (x))
+  {
+    /* See also: ECMA-262 v6, 7.2.13.7 */
+    return x == y;
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
   if (!ecma_is_value_number (y))
   {

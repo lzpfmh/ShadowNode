@@ -29,6 +29,7 @@
 #include "ecma-objects.h"
 #include "ecma-objects-general.h"
 #include "ecma-string-object.h"
+#include "ecma-symbol-object.h"
 #include "ecma-try-catch-macro.h"
 #include "jrt-libc-includes.h"
 
@@ -224,6 +225,13 @@ ecma_op_to_boolean (ecma_value_t value) /**< ecma value */
     return !ecma_string_is_empty (str_p);
   }
 
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  if (ecma_is_value_symbol (value))
+  {
+    return true;
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
   JERRY_ASSERT (ecma_is_value_object (value));
 
   return true;
@@ -258,6 +266,12 @@ ecma_op_to_number (ecma_value_t value) /**< ecma value */
     ecma_string_t *str_p = ecma_get_string_from_value (value);
     return ecma_make_number_value (ecma_string_to_number (str_p));
   }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  if (ecma_is_value_symbol (value))
+  {
+    return ecma_raise_type_error (ECMA_ERR_MSG ("Cannot convert a Symbol value to a number."));
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
   if (ecma_is_value_object (value))
   {
@@ -421,6 +435,12 @@ ecma_op_to_string (ecma_value_t value) /**< ecma value */
     {
       res_p = ecma_get_magic_string (LIT_MAGIC_STRING_NULL);
     }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    else if (ecma_is_value_symbol (value))
+    {
+      return ecma_raise_type_error (ECMA_ERR_MSG ("Cannot convert a Symbol value to a string."));
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
     else
     {
       JERRY_ASSERT (ecma_is_value_boolean (value));
@@ -465,6 +485,12 @@ ecma_op_to_object (ecma_value_t value) /**< ecma value */
   {
     return ecma_copy_value (value);
   }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  else if (ecma_is_value_symbol (value))
+  {
+    return ecma_op_create_symbol_object (value);
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
   else
   {
     if (ecma_is_value_undefined (value)

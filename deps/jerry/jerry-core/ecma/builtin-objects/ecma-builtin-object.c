@@ -281,11 +281,40 @@ ecma_builtin_object_object_get_own_property_names (ecma_value_t this_arg, /**< '
   {
     ecma_object_t *obj_p = ecma_get_object_from_value (arg);
     /* 2-5. */
-    ret_value = ecma_builtin_helper_object_get_properties (obj_p, false);
+    ret_value = ecma_builtin_helper_object_get_properties (obj_p, ECMA_LIST_NO_OPTS);
   }
 
   return ret_value;
 } /* ecma_builtin_object_object_get_own_property_names */
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+/**
+ * The Object object's 'getOwnPropertySymbols' routine
+ *
+ * See also:
+ *          ECMA-262 v6, 19.1.2.7
+ *
+ * @return ecma value
+ *         Returned value must be freed with ecma_free_value.
+ */
+static ecma_value_t
+ecma_builtin_object_object_get_own_property_symbols (ecma_value_t this_arg, /**< 'this' argument */
+                                                     ecma_value_t arg) /**< routine's argument */
+{
+  JERRY_UNUSED (this_arg);
+
+  if (!ecma_is_value_object (arg))
+  {
+    /* 1. */
+    return ecma_raise_type_error (ECMA_ERR_MSG ("Argument is not an object."));
+  }
+
+  /* 2 - 5. */
+  ecma_object_t *obj_p = ecma_get_object_from_value (arg);
+
+  return ecma_builtin_helper_object_get_properties (obj_p, ECMA_LIST_SYMBOLS);
+} /* ecma_builtin_object_object_get_own_property_symbols */
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 
 /**
  * The Object object's 'seal' routine
@@ -676,7 +705,7 @@ ecma_builtin_object_object_keys (ecma_value_t this_arg, /**< 'this' argument */
   {
     ecma_object_t *obj_p = ecma_get_object_from_value (arg);
     /* 3-6. */
-    ret_value = ecma_builtin_helper_object_get_properties (obj_p, true);
+    ret_value = ecma_builtin_helper_object_get_properties (obj_p, ECMA_LIST_ENUMERABLE);
   }
 
   return ret_value;

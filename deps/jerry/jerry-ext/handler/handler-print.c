@@ -52,7 +52,8 @@ jerryx_handler_print (const jerry_value_t func_obj_val, /**< function object */
        jerry_value_is_undefined (ret_val) && arg_index < args_cnt;
        arg_index++)
   {
-    jerry_value_t str_val = jerry_value_to_string (args_p[arg_index]);
+    jerry_value_t str_val;
+    str_val = jerry_value_to_string (args_p[arg_index]);
 
     if (!jerry_value_has_error_flag (str_val))
     {

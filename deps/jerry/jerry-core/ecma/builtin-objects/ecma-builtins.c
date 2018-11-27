@@ -19,6 +19,9 @@
 #include "ecma-globals.h"
 #include "ecma-helpers.h"
 #include "ecma-objects.h"
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+#include "ecma-symbol-object.h"
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 #include "jcontext.h"
 #include "jrt-bit-fields.h"
 
@@ -787,6 +790,21 @@ ecma_builtin_try_to_instantiate_property (ecma_object_t *object_p, /**< object *
       value = ecma_make_magic_string_value (curr_property_p->value);
       break;
     }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    case ECMA_BUILTIN_PROPERTY_SYMBOL:
+    {
+      ecma_string_t *concated_str_p;
+      concated_str_p = ecma_append_magic_string_to_string (ecma_get_magic_string (LIT_MAGIC_STRING_SYMBOL_UL),
+                                                           LIT_MAGIC_STRING_DOT_CHAR);
+      ecma_string_t *final_str_p = ecma_append_magic_string_to_string (concated_str_p,
+                                                                       (lit_magic_string_id_t) curr_property_p->value);
+      ecma_value_t symbol_value = ecma_make_string_value (final_str_p);
+
+      value = ecma_op_create_symbol (&symbol_value, 1);
+      ecma_deref_ecma_string (final_str_p);
+      break;
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
     case ECMA_BUILTIN_PROPERTY_OBJECT:
     {
       value = ecma_make_object_value (ecma_builtin_get (curr_property_p->value));

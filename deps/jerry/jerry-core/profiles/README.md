@@ -33,6 +33,7 @@ Alternatively, if you want to use a custom profile at
 CONFIG_DISABLE_ES2015_BUILTIN
 CONFIG_DISABLE_ES2015_CLASS
 CONFIG_DISABLE_ES2015_PROMISE_BUILTIN
+CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
 CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS
 CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN
 ```
@@ -89,9 +90,11 @@ In JerryScript all of the features are enabled by default, so an empty profile f
   Disable the [enhanced object initializer](http://www.ecma-international.org/ecma-262/6.0/#sec-object-initializer) language element.
 * `CONFIG_DISABLE_ES2015_PROMISE_BUILTIN`:
   Disable the [Promise](http://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects) built-in.
+* `CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN`:
+  Disable the [Symbol](https://www.ecma-international.org/ecma-262/6.0/#sec-symbol-objects) built-in.
 * `CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS`:
   Disable the [template strings](http://www.ecma-international.org/ecma-262/6.0/#sec-static-semantics-templatestrings).
 * `CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN`:
   Disable the [ArrayBuffer](http://www.ecma-international.org/ecma-262/6.0/#sec-arraybuffer-objects) and [TypedArray](http://www.ecma-international.org/ecma-262/6.0/#sec-typedarray-objects) built-ins.
 * `CONFIG_DISABLE_ES2015`: Disable all of the implemented [ECMAScript2015 features](http://www.ecma-international.org/ecma-262/6.0/).
-  (equivalent to `CONFIG_DISABLE_ES2015_ARROW_FUNCTION`, `CONFIG_DISABLE_ES2015_BUILTIN`, `CONFIG_DISABLE_ES2015_CLASS`, `CONFIG_DISABLE_ES2015_PROMISE_BUILTIN`, `CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS`, and `CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN`).
+  (equivalent to `CONFIG_DISABLE_ES2015_ARROW_FUNCTION`, `CONFIG_DISABLE_ES2015_BUILTIN`, `CONFIG_DISABLE_ES2015_CLASS`, `CONFIG_DISABLE_ES2015_PROMISE_BUILTIN`, `CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN`, `CONFIG_DISABLE_ES2015_TEMPLATE_STRINGS`, and `CONFIG_DISABLE_ES2015_TYPEDARRAY_BUILTIN`).

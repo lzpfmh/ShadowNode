@@ -99,12 +99,27 @@ vm_op_get_value (ecma_value_t object, /**< base object */
     return error_value;
   }
 
-  ecma_value_t prop_to_string_result = ecma_op_to_string (property);
-
-  if (ECMA_IS_VALUE_ERROR (prop_to_string_result))
+  ecma_value_t prop_to_string_result;
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  if (ecma_is_value_symbol (property))
   {
-    return prop_to_string_result;
+    prop_to_string_result = ecma_copy_value (ECMA_CONVERT_SYMBOL_TO_STRING (property));
+
+    JERRY_ASSERT (ecma_is_value_string (prop_to_string_result));
   }
+  else
+  {
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+    prop_to_string_result = ecma_op_to_string (property);
+
+    if (ECMA_IS_VALUE_ERROR (prop_to_string_result))
+    {
+      return prop_to_string_result;
+    }
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
 
   ecma_string_t *property_name_p = ecma_get_string_from_value (prop_to_string_result);
 
@@ -158,16 +173,28 @@ vm_op_set_value (ecma_value_t object, /**< base object */
 
   if (!ecma_is_value_string (property))
   {
-    ecma_value_t to_string = ecma_op_to_string (property);
-    ecma_fast_free_value (property);
-
-    if (ECMA_IS_VALUE_ERROR (to_string))
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    if (ecma_is_value_symbol (property))
     {
-      ecma_free_value (object);
-      return to_string;
+      property = ECMA_CONVERT_SYMBOL_TO_STRING (property);
+      JERRY_ASSERT (ecma_is_value_string (property));
     }
+    else
+    {
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+      ecma_value_t to_string = ecma_op_to_string (property);
+      ecma_fast_free_value (property);
 
-    property = to_string;
+      if (ECMA_IS_VALUE_ERROR (to_string))
+      {
+        ecma_free_value (object);
+        return to_string;
+      }
+
+      property = to_string;
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+    }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
   }
 
   ecma_object_t *object_p = ecma_get_object_from_value (object);
@@ -1548,9 +1575,19 @@ vm_loop (vm_frame_ctx_t *frame_ctx_p) /**< frame context */
               ecma_string_t *index_str_p = ecma_new_ecma_string_from_uint32 (length_num);
 
               ecma_property_value_t *prop_value_p;
+
+              uint8_t prop_opts = ECMA_PROPERTY_CONFIGURABLE_ENUMERABLE_WRITABLE;
+
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+              if (ecma_is_value_symbol (stack_top_p[i]))
+              {
+                prop_opts &= (uint8_t) ~ECMA_PROPERTY_FLAG_ENUMERABLE;
+              }
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
+
               prop_value_p = ecma_create_named_data_property (array_obj_p,
                                                               index_str_p,
-                                                              ECMA_PROPERTY_CONFIGURABLE_ENUMERABLE_WRITABLE,
+                                                              prop_opts,
                                                               NULL);
 
               JERRY_ASSERT (ecma_is_value_undefined (prop_value_p->value));

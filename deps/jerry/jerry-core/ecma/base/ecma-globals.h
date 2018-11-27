@@ -86,6 +86,7 @@ typedef enum
   ECMA_TYPE_STRING = 1, /**< pointer to description of a string */
   ECMA_TYPE_FLOAT = 2, /**< pointer to a 64 or 32 bit floating point number */
   ECMA_TYPE_OBJECT = 3, /**< pointer to description of an object */
+  ECMA_TYPE_SYMBOL = 4, /**< pointer to description of a symbol */
   ECMA_TYPE_DIRECT_STRING = 5, /**< directly encoded string values */
   ECMA_TYPE_ERROR = 7, /**< pointer to description of an error reference */
   ECMA_TYPE_COLLECTION_CHUNK = ECMA_TYPE_ERROR, /**< pointer to description of a collection chunk */
@@ -347,6 +348,9 @@ typedef enum
                                        *   that are not indices */
   ECMA_LIST_ENUMERABLE = (1 << 1), /**< exclude non-enumerable properties */
   ECMA_LIST_PROTOTYPE = (1 << 2), /**< list properties from prototype chain */
+#ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+  ECMA_LIST_SYMBOLS = (1 << 3), /**< exclude non-symbol properties */
+#endif /* !CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN */
 } ecma_list_properties_options_t;
 
 /**
@@ -435,6 +439,18 @@ typedef enum
 
   ECMA_SPECIAL_PROPERTY__COUNT /**< Number of special property types */
 } ecma_special_property_id_t;
+
+/**
+ * Convert symbol value to string value
+ */
+#define ECMA_CONVERT_SYMBOL_TO_STRING(symbol_value) \
+   (ecma_value_t) ((symbol_value) - (ECMA_TYPE_SYMBOL - ECMA_TYPE_STRING))
+
+/**
+ * Convert string value to symbol value
+ */
+#define ECMA_CONVERT_STRING_TO_SYMBOL(symbol_value) \
+   (ecma_value_t) ((symbol_value) + (ECMA_TYPE_SYMBOL - ECMA_TYPE_STRING))
 
 /**
  * Define special property type.
@@ -1284,6 +1300,8 @@ typedef enum
                                              stored locally in the string's descriptor */
   ECMA_STRING_CONTAINER_MAGIC_STRING_EX, /**< the ecma-string is equal to one of external magic strings */
 
+  ECMA_STRING_CONTAINER_HEAP_UTF8_SYMBOL, /**< symbol data is a reference to an already existing ecma-string */
+
   ECMA_STRING_LITERAL_NUMBER, /**< a literal number which is used solely by the literal storage
                                *   so no string processing function supports this type except
                                *   the ecma_deref_ecma_string function. */
@@ -1354,6 +1372,7 @@ typedef struct
     uint32_t magic_string_ex_id; /**< identifier of an external magic string (lit_magic_string_ex_id_t) */
     ecma_value_t lit_number; /**< number (see ECMA_STRING_LITERAL_NUMBER) */
     uint32_t common_uint32_field; /**< for zeroing and comparison in some cases */
+    ecma_value_t symbol_descriptor; /**< string-value (see ECMA_STRING_CONTAINER_HEAP_UTF8_SYMBOL) */
   } u;
 } ecma_string_t;
 
