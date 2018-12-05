@@ -189,6 +189,7 @@ ecma_string_get_chars_fast (const ecma_string_t *string_p, /**< ecma-string */
 } /* ecma_string_get_chars_fast */
 
 #ifndef CONFIG_DISABLE_ES2015_SYMBOL_BUILTIN
+static uint16_t SYMBOL_GLOBAL_ID = 0;
 /**
  * Allocate new ecma-string and fill it with reference to the symbol descriptor
  *
@@ -202,7 +203,8 @@ ecma_new_symbol_from_descriptor_string (ecma_value_t string_desc) /**< ecma-stri
   ecma_string_t *symbol_p = ecma_alloc_string ();
   symbol_p->refs_and_container = ECMA_STRING_REF_ONE | ECMA_STRING_CONTAINER_HEAP_UTF8_SYMBOL;
   symbol_p->u.symbol_descriptor = string_desc;
-  symbol_p->hash = string_desc & ECMA_SYMBOL_HASH_MASK;
+  symbol_p->hash = string_desc & ECMA_SYMBOL_HASH_MASK & SYMBOL_GLOBAL_ID;
+  ++SYMBOL_GLOBAL_ID;
 
   return symbol_p;
 } /* ecma_new_symbol_from_descriptor_string */
