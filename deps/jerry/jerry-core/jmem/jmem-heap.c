@@ -21,6 +21,13 @@
 #include "jmem.h"
 #include "jrt-bit-fields.h"
 #include "jrt-libc-includes.h"
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #define JMEM_ALLOCATOR_INTERNAL
 #include "jmem-allocator-internal.h"
@@ -152,6 +159,18 @@ jmem_heap_init (void)
 #endif /* !JERRY_CPOINTER_32_BIT */
 
 #ifndef JERRY_SYSTEM_ALLOCATOR
+  char* path = "/Users/tunan/oops";
+  size_t size = 5242800*4;
+  int fd = open(path, O_RDWR|O_TRUNC);
+  lseek(fd, size,SEEK_SET);
+  write(fd,"",1);
+  uint8_t *area = (uint8_t*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  int ret = close(fd);
+  if(ret == -1) {
+    printf("oops");
+    exit(1);
+  }
+  jerry_global_heap.area = area;
   JERRY_ASSERT ((uintptr_t) JERRY_HEAP_CONTEXT (area) % JMEM_ALIGNMENT == 0);
 
   JERRY_CONTEXT (jmem_heap_limit) = CONFIG_MEM_HEAP_DESIRED_LIMIT;

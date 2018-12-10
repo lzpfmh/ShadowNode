@@ -244,7 +244,7 @@ jerry_context_get_current_lcache (void)
 typedef struct
 {
   jmem_heap_free_t first; /**< first node in free region list */
-  uint8_t area[JMEM_HEAP_AREA_SIZE]; /**< heap area */
+  uint8_t* area; /**< heap area */
 } jmem_heap_t;
 
 /**
