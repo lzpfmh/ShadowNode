@@ -160,11 +160,10 @@ jmem_heap_init (void)
 
 #ifndef JERRY_SYSTEM_ALLOCATOR
   char* path = "/Users/tunan/oops";
-  size_t size = 5242800*4;
-  int fd = open(path, O_RDWR|O_TRUNC);
-  lseek(fd, size,SEEK_SET);
+  int fd = open("/Users/tunan/oops", O_RDWR|O_TRUNC);
+  lseek(fd, 5242800*4,SEEK_SET);
   write(fd,"",1);
-  uint8_t *area = (uint8_t*)mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  uint8_t *area = (uint8_t*)mmap(NULL, 5242800*4, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   int ret = close(fd);
   if(ret == -1) {
     printf("oops");
